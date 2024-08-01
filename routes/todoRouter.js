@@ -24,62 +24,105 @@ const handleValidationErrors = (req, res, next) => {
  * @swagger
  * components:
  *   schemas:
- *     Product:
+ *     Todo:
  *       type: object
  *       required:
- *         - name
- *         - price
- *         - categoryId
+ *         - description
+ *         - status
  *       properties:
- *         name:
- *           type: string
- *           description: The name of the product
+ *         id:
+ *           type: integer
+ *           description: The unique identifier for the todo item
+ *           example: 1
  *         description:
  *           type: string
- *           description: A brief description of the product
- *         price:
- *           type: number
- *           format: decimal
- *           description: The price of the product
- *         categoryId:
- *           type: integer
- *           description: The ID of the category the product belongs to
+ *           description: A brief description of the todo item
+ *           example: Buy groceries
+ *         status:
+ *           type: string
+ *           enum:
+ *             - pending
+ *             - completed
+ *           description: The status of the todo item
+ *           example: pending
  *       example:
- *         name: Product Name
- *         description: Product description
- *         price: 99.99
- *         categoryId: 2
+ *         description: Buy groceries
+ *         status: pending
  */
-todoRouter.get("/filter",authenticate,filterTodos)
+
+
 
 /**
  * @swagger
- * /products:
+ * /todos/filter:
  *   get:
- *     summary: Retrieve a list of products
- *     tags: [Products]
+ *     summary: Retrieve a list of todos filtered by status
+ *     tags: [Todos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, completed]
+ *         required: false
+ *         description: The status of the todos to retrieve (e.g., 'pending' or 'completed')
  *     responses:
  *       200:
- *         description: A list of products
+ *         description: A list of todos filtered by the specified status
  *         content:
  *           application/json:
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/Product'
+ *                 $ref: '#/components/schemas/Todo'
+ *             example:
+ *               - id: 1
+ *                 description: "Complete the project report"
+ *                 status: "pending"
+ *               - id: 2
+ *                 description: "Buy groceries"
+ *                 status: "pending"
+ *       400:
+ *         description: Invalid status provided
  *       500:
  *         description: Server error
  */
+
+
+
+todoRouter.get("/filter",authenticate,filterTodos)
+
+/**
+ * @swagger
+ * /todos:
+ *   get:
+ *     summary: Retrieve a list of todos
+ *     tags: [Todos]
+ *     responses:
+ *       200:
+ *         description: A list of todos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Todo'
+ *       500:
+ *         description: Server error
+ */
+
 
 todoRouter.get('/',authenticate, getAllTodos);
 
 
 /**
  * @swagger
- * /products/{id}:
+ * /todos/{id}:
  *   get:
- *     summary: Retrieve a product by its ID
- *     tags: [Products]
+ *     summary: Retrieve a todo by its ID
+ *     tags: [Todos]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -88,16 +131,16 @@ todoRouter.get('/',authenticate, getAllTodos);
  *         schema:
  *           type: integer
  *         required: true
- *         description: The ID of the product to retrieve
+ *         description: The ID of the todo to retrieve
  *     responses:
  *       200:
- *         description: Details of the requested product
+ *         description: Details of the requested todo
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Product'
+ *               $ref: '#/components/schemas/Todo'
  *       404:
- *         description: Product not found
+ *         description: Todo not found
  *       500:
  *         description: Server error
  */
@@ -107,10 +150,10 @@ todoRouter.get('/:id', getTodoById);
 
 /**
  * @swagger
- * /products:
+ * /todos:
  *   post:
- *     summary: Add a new product
- *     tags: [Products]
+ *     summary: Add a new todo
+ *     tags: [Todos]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -118,14 +161,20 @@ todoRouter.get('/:id', getTodoById);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Product'
+ *             $ref: '#/components/schemas/Todo'
+ *           example:
+ *             description: "Buy groceries"
+ *             status: "pending"
  *     responses:
  *       201:
- *         description: Product added successfully
+ *         description: Todo added successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Product'
+ *               $ref: '#/components/schemas/Todo'
+ *             example:
+ *               description: "Buy groceries"
+ *               status: "pending"
  *       400:
  *         description: Validation error
  *       500:
@@ -141,10 +190,10 @@ todoRouter.post('/', authenticate,todoCreateValidation,handleValidationErrors ,c
 
 /**
  * @swagger
- * /products/{id}:
+ * /todos/{id}:
  *   put:
- *     summary: Update an existing product
- *     tags: [Products]
+ *     summary: Update an existing todo
+ *     tags: [Todos]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -153,24 +202,30 @@ todoRouter.post('/', authenticate,todoCreateValidation,handleValidationErrors ,c
  *         schema:
  *           type: integer
  *         required: true
- *         description: The ID of the product to update
+ *         description: The ID of the todo to update
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Product'
+ *             $ref: '#/components/schemas/Todo'
+ *           example:
+ *             description: "Complete the project report"
+ *             status: "completed"
  *     responses:
  *       200:
- *         description: Product updated successfully
+ *         description: Todo updated successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Product'
+ *               $ref: '#/components/schemas/Todo'
+ *             example:
+ *               description: "Complete the project report"
+ *               status: "completed"
  *       400:
  *         description: Validation error
  *       404:
- *         description: Product not found
+ *         description: Todo not found
  *       500:
  *         description: Server error
  */
@@ -182,10 +237,10 @@ todoRouter.put('/:id',todoUpdateValidation,handleValidationErrors, authenticate,
 
 /**
  * @swagger
- * /products/{id}:
+ * /todos/{id}:
  *   delete:
- *     summary: Delete an existing product
- *     tags: [Products]
+ *     summary: Delete an existing todo
+ *     tags: [Todos]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -194,12 +249,12 @@ todoRouter.put('/:id',todoUpdateValidation,handleValidationErrors, authenticate,
  *         schema:
  *           type: integer
  *         required: true
- *         description: The ID of the product to delete
+ *         description: The ID of the todo to delete
  *     responses:
  *       204:
- *         description: Product deleted successfully
+ *         description: Todo deleted successfully
  *       404:
- *         description: Product not found
+ *         description: Todo not found
  *       500:
  *         description: Server error
  */

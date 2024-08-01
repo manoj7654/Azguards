@@ -68,10 +68,8 @@ const deleteTodo = async (req, res) => {
     }
 };
 const filterTodos = async (req, res) => {
-    console.log("hello")
     try {
         const { status } = req.query;
-        console.log(status)
         const todos = await Todo.findAll({ where: { status } });
         res.json(todos);
     } catch (error) {
