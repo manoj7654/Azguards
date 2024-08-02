@@ -5,8 +5,9 @@ const todoRouter = express.Router();
 
 
 const { validationResult } = require('express-validator');
-const { getAllTodos, getTodoById, createTodo, updateTodo, deleteTodo, filterTodos } = require('../controller/todoContoller');
+const { getAllTodos, getTodoById, createTodo, updateTodo, deleteTodo, filterTodos, uploadTodos, downloadTodos } = require('../controller/todoContoller');
 const { todoCreateValidation, todoUpdateValidation } = require('../validator/todoValidator');
+const uploadFile = require('../middleware/uploadCsv');
 
 
 
@@ -50,6 +51,35 @@ const handleValidationErrors = (req, res, next) => {
  *         status: pending
  */
 
+/**
+ * @swagger
+ * /todos/download:
+ *   get:
+ *     summary: Download todos as a CSV file
+ *     tags: [Todos]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: CSV file containing todos data
+ *         content:
+ *           text/csv:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *               description: The CSV file with todos data
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Error message here
+ */
+todoRouter.get("/download",authenticate,downloadTodos)
 
 
 /**
@@ -264,5 +294,59 @@ todoRouter.delete('/:id',authenticate, deleteTodo);
 
 
 
+/**
+ * @swagger
+ * /todos/upload:
+ *   post:
+ *     summary: Upload todos from a CSV file
+ *     tags: [Todos]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: The CSV file containing todos to upload
+ *     responses:
+ *       200:
+ *         description: Todos uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Todos uploaded successfully
+ *       400:
+ *         description: No file uploaded or invalid file format
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: No file uploaded.
+ *       500:
+ *         description: Server error or processing error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Error message here
+ */
+
+
+todoRouter.post('/upload',authenticate, uploadFile.single('file'), uploadTodos);
 
 module.exports = todoRouter;

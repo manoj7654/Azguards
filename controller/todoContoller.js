@@ -1,8 +1,8 @@
 const Todo = require('../modal/todoModal');
-// const { parse } = require('csv-parse');
-// const { stringify } = require('json2csv');
-// const fs = require('fs');
-// const path = require('path');
+const { parse } = require('csv-parse');
+const fs = require('fs');
+const path = require('path');
+const CsvParser = require("json2csv").Parser
 
 // CRUD operations
 const getAllTodos = async (req, res) => {
@@ -77,35 +77,62 @@ const filterTodos = async (req, res) => {
     }
 };
 
-// // CSV upload and download
-// const uploadTodos = async (req, res) => {
-//     try {
-//         const filePath = path.join(__dirname, '../../uploads/', req.file.filename);
-//         fs.createReadStream(filePath)
-//             .pipe(parse({ columns: true }))
-//             .on('data', async (row) => {
-//                 await Todo.create(row);
-//             })
-//             .on('end', () => {
-//                 fs.unlinkSync(filePath);
-//                 res.status(200).json({ message: 'Todos uploaded successfully' });
-//             });
-//     } catch (error) {
-//         res.status(500).json({ error: error.message });
-//     }
-// };
+const uploadTodos = async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded.' });
+      }
+  
+      const filePath = path.join(__dirname, '../../uploads/', req.file.filename);
+      const validStatuses = ['pending', 'completed']; 
+  
+      fs.createReadStream(filePath)
+        .pipe(parse({ columns: true }))
+        .on('data', async (row) => {
+         
+          if (!validStatuses.includes(row.status)) {
+            console.error(`Invalid status value: ${row.status}`);
+            return; // Skip the row or handle it as needed
+          }
+  
+          await Todo.create(row);
+        })
+        .on('end', () => {
+          fs.unlinkSync(filePath);
+          res.status(200).json({ message: 'Todos uploaded successfully' });
+        })
+        .on('error', (error) => {
+          fs.unlinkSync(filePath);
+          res.status(500).json({ error: error.message });
+        });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+  
+const downloadTodos =(req, res) => {
+    Todo.findAll().then((objs) => {
+      let tutorials = [];
+  
+      objs.forEach((obj) => {
+        const {  description, status } = obj;
+        tutorials.push({  description, status });
+      });
+  
+      const csvFields = ["Description", "status"];
+      const csvParser = new CsvParser({ csvFields });
+      const csvData = csvParser.parse(tutorials);
+  
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", "attachment; filename=todo.csv");
+  
+      res.status(200).end(csvData);
+    });
+  };
+  
+  
+  
+  
+  
 
-// const downloadTodos = async (req, res) => {
-//     try {
-//         const todos = await Todo.findAll();
-//         const csv = stringify(todos.map(todo => todo.toJSON()));
-//         res.header('Content-Type', 'text/csv');
-//         res.attachment('todos.csv');
-//         res.send(csv);
-//     } catch (error) {
-//         res.status(500).json({ error: error.message });
-//     }
-// };
-
-
-module.exports={getAllTodos,getTodoById,createTodo,updateTodo,deleteTodo,filterTodos}
+module.exports={getAllTodos,getTodoById,createTodo,updateTodo,deleteTodo,filterTodos,uploadTodos,downloadTodos}
